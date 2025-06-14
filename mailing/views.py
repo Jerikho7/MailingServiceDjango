@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy, reverse
 from django.views.generic import (
     CreateView,
@@ -8,8 +7,8 @@ from django.views.generic import (
     UpdateView,
 )
 
-from mailing.forms import ClientForm
-from mailing.models import Mailing, Client
+from mailing.forms import ClientForm, MessageForm
+from mailing.models import Mailing, Client, Message
 
 
 class MailingHomeView(ListView):
@@ -21,8 +20,10 @@ class MailingHomeView(ListView):
 
         context = super().get_context_data(**kwargs)
         context["all_mailings_count"] = Mailing.objects.count()
-        context["active_mailings_count"] = Mailing.objects.filter(status="running",).count()
-        context["unique_recipients_count"] = Client.objects.distinct('email').count()
+        context["active_mailings_count"] = Mailing.objects.filter(
+            status="running",
+        ).count()
+        context["unique_recipients_count"] = Client.objects.distinct("email").count()
 
         return context
 
@@ -34,6 +35,7 @@ class ClientListView(ListView):
 class ClientDetailView(DetailView):
     model = Client
 
+
 class ClientCreateView(CreateView):
     model = Client
     form_class = ClientForm
@@ -41,16 +43,48 @@ class ClientCreateView(CreateView):
     success_url = reverse_lazy("mailing:client_list")
 
 
-class ClientUpdateView(LoginRequiredMixin, UpdateView):
+class ClientUpdateView(UpdateView):
     model = Client
     form_class = ClientForm
     template_name = "mailing/client_form.html"
     success_url = reverse_lazy("mailing:client_list")
 
     def get_success_url(self):
-        return reverse("mailin:client_detail", args=[self.kwargs.get("pk")])
+        return reverse("mailing:client_detail", args=[self.kwargs.get("pk")])
+
 
 class ClientDeleteView(DeleteView):
     model = Client
     template_name = "mailing/client_delete.html"
     success_url = reverse_lazy("mailing:client_list")
+
+
+class MessageListView(ListView):
+    model = Message
+
+
+class MessageDetailView(DetailView):
+    model = Message
+
+
+class MessageCreateView(CreateView):
+    model = Message
+    form_class = MessageForm
+    template_name = "mailing/message_form.html"
+    success_url = reverse_lazy("mailing:message_list")
+
+
+class MessageUpdateView(UpdateView):
+    model = Message
+    form_class = MessageForm
+    template_name = "mailing/message_form.html"
+    success_url = reverse_lazy("mailing:message_list")
+
+    def get_success_url(self):
+        return reverse("mailing:message_detail", args=[self.kwargs.get("pk")])
+
+
+class MessageDeleteView(DeleteView):
+    model = Message
+    template_name = "mailing/message_delete.html"
+    success_url = reverse_lazy("mailing:message_list")
