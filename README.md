@@ -9,7 +9,7 @@
 ## 🛠 Технологии
 
 - Python 3.13.4
-- Django 4.x
+- Django 5.2.3
 - Poetry
 - PostgreSQL
 - Bootstrap 5
