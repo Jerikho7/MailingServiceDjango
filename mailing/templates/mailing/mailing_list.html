@@ -1,0 +1,97 @@
+{% extends 'mailing/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Хэдер -->
+    <header class="text-center mb-5">
+        <h1 class="display-4">
+            <i class="fas fa-paper-plane text-primary"></i> Рассылки
+        </h1>
+        <p class="text-muted">Управление рассылками сообщений</p>
+    </header>
+
+    <!-- Список рассылок -->
+    {% if object_list %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+        {% for mailing in object_list %}
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-envelope me-2"></i>
+                        Рассылка #{{ mailing.id }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <i class="fas fa-calendar-alt text-muted me-2"></i>
+                        <strong>Начало:</strong> {{ mailing.start_mailing|default:"Не указано" }}
+                    </p>
+                    <p class="card-text">
+                        <i class="fas fa-calendar-times text-muted me-2"></i>
+                        <strong>Окончание:</strong> {{ mailing.end_mailing|default:"Не указано" }}
+                    </p>
+                    <p class="card-text">
+                        <i class="fas fa-info-circle text-muted me-2"></i>
+                        <strong>Статус:</strong>
+                        <span class="badge
+                            {% if mailing.status == 'created' %}bg-secondary
+                            {% elif mailing.status == 'running' %}bg-primary
+                            {% else %}bg-success{% endif %}">
+                            {{ mailing.get_status_display }}
+                        </span>
+                    </p>
+                    <p class="card-text">
+                        <i class="fas fa-envelope-open-text text-muted me-2"></i>
+                        <strong>Сообщение:</strong> {{ mailing.message.subject|truncatechars:20 }}
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent d-flex justify-content-between">
+                    <a href="{% url 'mailing:mailing_detail' mailing.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i> Просмотр
+                    </a>
+                    <span class="text-muted small">
+                        Получателей: {{ mailing.clients.count }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Состояние "Нет рассылок" -->
+    <div class="d-flex align-items-center justify-content-center" style="min-height: 50vh;">
+        <div class="text-center p-5 border rounded-3 bg-light" style="max-width: 600px;">
+            <i class="fas fa-paper-plane fa-4x text-muted mb-4"></i>
+            <h3 class="mb-3">Рассылок нет</h3>
+            <p class="lead mb-4">Создайте свою первую рассылку</p>
+            <a href="{% url 'mailing:mailing_form' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus-circle me-2"></i>Создать рассылку
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Кнопка добавления (если есть рассылки) -->
+    {% if object_list %}
+    <div class="text-center mb-5">
+        <a href="{% url 'mailing:mailing_form' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Новая рассылка
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .badge {
+        font-size: 0.85em;
+    }
+</style>
+{% endblock %}

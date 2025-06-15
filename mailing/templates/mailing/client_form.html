@@ -1,0 +1,86 @@
+{% extends 'mailing/base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <!-- Динамический заголовок -->
+                <div class="card-header bg-primary text-white">
+                    <h2 class="h4 mb-0">
+                        <i class="fas {% if object %}fa-user-edit{% else %}fa-user-plus{% endif %} me-2"></i>
+                        {% if object %}Редактирование клиента{% else %}Добавление нового клиента{% endif %}
+                    </h2>
+                </div>
+
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+
+                        <!-- Поле ФИО -->
+                        <div class="mb-3">
+                            <label for="{{ form.full_name.id_for_label }}" class="form-label">
+                                <i class="fas fa-user-tag me-2"></i>ФИО клиента
+                            </label>
+                            {% render_field form.full_name class+="form-control" placeholder="Иванов Иван Иванович" %}
+                            {% if form.full_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.full_name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Поле Email -->
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="fas fa-envelope me-2"></i>Email
+                            </label>
+                            {% render_field form.email class+="form-control" placeholder="example@domain.com" %}
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.email.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Поле Комментарий -->
+                        <div class="mb-4">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">
+                                <i class="fas fa-comment me-2"></i>Комментарий
+                            </label>
+                            {% render_field form.comment class+="form-control" placeholder="Дополнительная информация" rows="3" %}
+                            {% if form.comment.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.comment.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>{% if object %}Сохранить изменения{% else %}Добавить клиента{% endif %}
+                            </button>
+                            <a href="{% url 'mailing:client_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+</style>
+{% endblock %}
