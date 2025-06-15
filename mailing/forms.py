@@ -1,6 +1,3 @@
-from django.utils import timezone
-from datetime import datetime
-
 from django import forms
 from mailing.models import Client, Message, Mailing
 

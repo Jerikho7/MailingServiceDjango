@@ -1,14 +1,18 @@
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
 from django.urls import reverse_lazy, reverse
+from django.views import View
 from django.views.generic import (
     CreateView,
     DeleteView,
     DetailView,
     ListView,
-    UpdateView,
+    UpdateView, TemplateView,
 )
 
 from mailing.forms import ClientForm, MessageForm, MailingForm
-from mailing.models import Mailing, Client, Message
+from mailing.models import Mailing, Client, Message, MailingAttempt
+from mailing.services import process_mailing
 
 
 class MailingHomeView(ListView):
@@ -127,3 +131,42 @@ class MailingDeleteView(DeleteView):
     template_name = "mailing/mailing_delete.html"
     success_url = reverse_lazy("mailing:mailing_list")
 
+
+class MailingAttemptView(ListView):
+    model = MailingAttempt
+    template_name = "mailing/report.html"
+    context_object_name = "attempts"
+
+    def get_context_data(self, **kwargs):
+        """Добавление переменных в шаблон страницы статистики"""
+        context = super().get_context_data(**kwargs)
+        queryset = self.get_queryset()
+        context["total_attempts_count"] = queryset.count()
+        context["success_attempts_count"] = queryset.filter(status="success").count()
+        context["failed_attempts_count"] = queryset.filter(
+            status="fail"
+        ).count()
+        return context
+
+
+class MailingSendView(View):
+    def post(self, request, pk):
+        mailing = get_object_or_404(Mailing, pk=pk)
+        process_mailing(mailing)
+        messages.success(request, "Рассылка отправлена.")
+        return redirect('mailing:mailing_detail', pk=pk)
+
+
+
+class ActiveMailingsView(ListView):
+    model = Mailing
+    template_name = "mailing/active_mailing.html"
+    context_object_name = "active_mailings"
+
+    def get_queryset(self):
+        queryset = Mailing.objects.filter(status="running").prefetch_related("clients", "message")
+        for mailing in queryset:
+            total = mailing.clients.count()
+            sent = MailingAttempt.objects.filter(mailing=mailing, status="success").count()
+            mailing.progress = round((sent / total) * 100) if total > 0 else 0
+        return queryset
