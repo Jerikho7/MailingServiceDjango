@@ -7,7 +7,7 @@ from django.views.generic import (
     UpdateView,
 )
 
-from mailing.forms import ClientForm, MessageForm
+from mailing.forms import ClientForm, MessageForm, MailingForm
 from mailing.models import Mailing, Client, Message
 
 
@@ -20,9 +20,7 @@ class MailingHomeView(ListView):
 
         context = super().get_context_data(**kwargs)
         context["all_mailings_count"] = Mailing.objects.count()
-        context["active_mailings_count"] = Mailing.objects.filter(
-            status="running",
-        ).count()
+        context["active_mailings_count"] = Mailing.objects.filter(status="running",).count()
         context["unique_recipients_count"] = Client.objects.distinct("email").count()
 
         return context
@@ -88,3 +86,44 @@ class MessageDeleteView(DeleteView):
     model = Message
     template_name = "mailing/message_delete.html"
     success_url = reverse_lazy("mailing:message_list")
+
+
+class MailingListView(ListView):
+    model = Mailing
+
+class MailingDetailView(DetailView):
+    model = Mailing
+
+
+class MailingCreateView(CreateView):
+    model = Mailing
+    form_class = MailingForm
+    template_name = "mailing/mailing_form.html"
+    success_url = reverse_lazy("mailing:mailing_list")
+
+
+class MailingUpdateView(UpdateView):
+    model = Mailing
+    form_class = MailingForm
+    template_name = "mailing/mailing_form.html"
+    success_url = reverse_lazy("mailing:mailing_list")
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        status = form.cleaned_data.get('status')
+        if status:
+            self.object.status = status
+            self.object.save(update_fields=['status'])
+
+        return response
+
+    def get_success_url(self):
+        return reverse("mailing:mailing_detail", args=[self.kwargs.get("pk")])
+
+
+class MailingDeleteView(DeleteView):
+    model = Mailing
+    template_name = "mailing/mailing_delete.html"
+    success_url = reverse_lazy("mailing:mailing_list")
+
