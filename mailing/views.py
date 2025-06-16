@@ -1,4 +1,5 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
@@ -12,6 +13,7 @@ from django.views.generic import (
 )
 
 from mailing.forms import ClientForm, MessageForm, MailingForm
+from mailing.mixins import UserOrManagerViewAccessMixin, UserOnlyEditMixin
 from mailing.models import Mailing, Client, Message, MailingAttempt
 from mailing.services import process_mailing
 
@@ -20,8 +22,6 @@ class MailingHomeView(ListView):
     model = Mailing
     template_name = "mailing/home.html"
     context_object_name = "mailings"
-
-
 
     def get_context_data(self, **kwargs):
 
@@ -32,15 +32,17 @@ class MailingHomeView(ListView):
         return context
 
 
-class ClientListView(ListView):
+class ClientListView(UserOrManagerViewAccessMixin, ListView):
     model = Client
     template_name = "mailing/client_list.html"
 
     def get_queryset(self):
+        if self.request.user.is_staff:
+            return Client.objects.all()
         return Client.objects.filter(user=self.request.user)
 
 
-class ClientDetailView(DetailView):
+class ClientDetailView(UserOrManagerViewAccessMixin, DetailView):
     model = Client
     template_name = "mailing/client_detail.html"
 
@@ -59,7 +61,7 @@ class ClientCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class ClientUpdateView(LoginRequiredMixin, UpdateView):
+class ClientUpdateView(LoginRequiredMixin, UserOnlyEditMixin, UpdateView):
     model = Client
     form_class = ClientForm
     template_name = "mailing/client_form.html"
@@ -68,25 +70,32 @@ class ClientUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse("mailing:client_detail", args=[self.kwargs.get("pk")])
 
-    def get_queryset(self):
-        return Client.objects.filter(user=self.request.user)
 
-
-class ClientDeleteView(LoginRequiredMixin, DeleteView):
+class ClientDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Client
     template_name = "mailing/client_delete.html"
     success_url = reverse_lazy("mailing:client_list")
 
+    def test_func(self):
+        client = self.get_object()
+        user = self.request.user
+        return client.user == user or user.has_perm('mailing.client_delete')
 
-class MessageListView(ListView):
+    def handle_no_permission(self):
+        raise PermissionDenied("У вас нет прав на удаление этого клиента.")
+
+
+class MessageListView(UserOrManagerViewAccessMixin, ListView):
     model = Message
     template_name = "mailing/message_list.html"
 
     def get_queryset(self):
+        if self.request.user.is_staff:
+            return Message.objects.all()
         return Message.objects.filter(user=self.request.user)
 
 
-class MessageDetailView(DetailView):
+class MessageDetailView(UserOrManagerViewAccessMixin, DetailView):
     model = Message
     template_name = "mailing/message_detail.html"
 
@@ -105,7 +114,7 @@ class MessageCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class MessageUpdateView(LoginRequiredMixin, UpdateView):
+class MessageUpdateView(LoginRequiredMixin, UserOnlyEditMixin, UpdateView):
     model = Message
     form_class = MessageForm
     template_name = "mailing/message_form.html"
@@ -114,24 +123,31 @@ class MessageUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse("mailing:message_detail", args=[self.kwargs.get("pk")])
 
-    def get_queryset(self):
-        return Message.objects.filter(user=self.request.user)
-
 
 class MessageDeleteView(DeleteView):
     model = Message
     template_name = "mailing/message_delete.html"
     success_url = reverse_lazy("mailing:message_list")
 
+    def test_func(self):
+        message = self.get_object()
+        user = self.request.user
+        return message.user == user or user.has_perm('mailing.message_delete')
 
-class MailingListView(ListView):
+    def handle_no_permission(self):
+        raise PermissionDenied("У вас нет прав на удаление этого сообщения.")
+
+
+class MailingListView(UserOrManagerViewAccessMixin, ListView):
     model = Mailing
     template_name = "mailing/mailing_list.html"
 
     def get_queryset(self):
-        return Mailing.objects.filter(user=self.request.user)
+        if self.request.user.is_staff:
+            return Mailing.objects.all()
+        return Mailing.objects.filter(owner=self.request.user)
 
-class MailingDetailView(DetailView):
+class MailingDetailView(UserOrManagerViewAccessMixin, DetailView):
     model = Mailing
     template_name = "mailing/mailing_detail.html"
 
@@ -150,7 +166,7 @@ class MailingCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 
-class MailingUpdateView(LoginRequiredMixin, UpdateView):
+class MailingUpdateView(LoginRequiredMixin, UserOnlyEditMixin, UpdateView):
     model = Mailing
     form_class = MailingForm
     template_name = "mailing/mailing_form.html"
@@ -167,14 +183,19 @@ class MailingUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse("mailing:mailing_detail", args=[self.kwargs.get("pk")])
 
-    def get_queryset(self):
-        return Mailing.objects.filter(user=self.request.user)
-
 
 class MailingDeleteView(LoginRequiredMixin, DeleteView):
     model = Mailing
     template_name = "mailing/mailing_delete.html"
     success_url = reverse_lazy("mailing:mailing_list")
+
+    def test_func(self):
+        mailing = self.get_object()
+        user = self.request.user
+        return mailing.user == user or user.has_perm('mailing.mailing_delete')
+
+    def handle_no_permission(self):
+        raise PermissionDenied("У вас нет прав на удаление этой рассылки.")
 
 
 class MailingAttemptView(ListView):
@@ -183,7 +204,7 @@ class MailingAttemptView(ListView):
     context_object_name = "attempts"
 
     def get_queryset(self):
-        return MailingAttempt.objects.filter(mailing__owner=self.request.user)
+        return MailingAttempt.objects.filter(mailing__user=self.request.user)
 
     def get_context_data(self, **kwargs):
         """Добавление переменных в шаблон страницы статистики"""
