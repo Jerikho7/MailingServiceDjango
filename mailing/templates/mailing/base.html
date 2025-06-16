@@ -40,6 +40,7 @@
                             <i class="fas fa-home me-1"></i> Главная
                         </a>
                     </li>
+                    {% if user.is_authenticated or user.is_staff or user == mailing.user %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'mailing:mailing_list' %}">
                             <i class="fas fa-list me-1"></i> Все рассылки
@@ -60,12 +61,45 @@
                             <i class="fas fa-chart-pie me-1"></i> Отчет о рассылке
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
+                {% if user.is_authenticated or user.is_staff or user == mailing.user %}
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                       id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="/static/img/user.png" alt="User" class="rounded-circle me-2"
+                             style="width: 32px; height: 32px;">
+                        <span>{{ user.email }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="dropdownUser">
+
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Профиль</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <form method="post" action="{% url 'accounts:logout' %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="dropdown-item d-flex align-items-center bg-transparent border-0 w-100 text-start">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Выход
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+                {% else %}
                 <div class="d-flex">
-                    <a href="#" class="btn btn-outline-light me-2">
+                    <a href="{% url 'accounts:register' %}" class="btn btn-outline-light me-2">
+                        <i class="fas fa-user-plus me-2"></i> Регистрация
+                    </a>
+                </div>
+                <div class="d-flex">
+                    <a href="{% url 'accounts:login' %}" class="btn btn-outline-light me-2">
                         <i class="fas fa-sign-in-alt me-1"></i> Войти
                     </a>
                 </div>
+                {% endif %}
             </div>
         </div>
     </nav>
