@@ -141,7 +141,7 @@ PHONENUMBER_DEFAULT_REGION = "RU"
 
 LOGIN_REDIRECT_URL = "mailing:main"
 LOGOUT_REDIRECT_URL = "mailing:main"
-# LOGIN_URL = "users:login"
+LOGIN_URL = "accounts:login"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.yandex.ru"

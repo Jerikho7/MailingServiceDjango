@@ -1,9 +1,11 @@
 import secrets
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy, reverse
-from django.views.generic import CreateView, FormView
+from django.views.generic import CreateView, FormView, ListView, DetailView, UpdateView
+from django.views import View
 
 from accounts.forms import UserRegisterForm, PasswordResetRequestForm, CustomSetPasswordForm
 from accounts.models import User
@@ -89,3 +91,42 @@ class AccountPasswordResetConfirmView(FormView):
             user.save()
             return redirect(self.success_url)
         return render(request, self.template_name, {'form': form})
+
+class UserListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    model = User
+    template_name = "accounts/user_list.html"
+    permission_required = 'accounts.can_view_all_users'
+
+class UserBlockView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'accounts.can_block_users'
+
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        if user == request.user:
+            messages.error(request, "Нельзя заблокировать самого себя.")
+            return redirect('accounts:user_list')
+        user.is_active = False
+        user.save()
+        messages.success(request, f"Пользователь {user.email} заблокирован.")
+        return redirect('accounts:user_list')
+
+class UserDetailView(LoginRequiredMixin, DetailView):
+    model = User
+    template_name = "accounts/user_detail.html"
+    context_object_name = "viewed_user"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_own_profile'] = self.object == self.request.user
+        return context
+
+class UserEditView(LoginRequiredMixin, UpdateView):
+    model = User
+    form_class = UserRegisterForm
+    template_name = 'accounts/user_edit.html'
+
+    def get_object(self, queryset=None):
+        return get_object_or_404(User, pk=self.kwargs.get('pk'))
+
+    def get_success_url(self):
+        return reverse('accounts:user_detail', kwargs={'pk': self.object.pk})

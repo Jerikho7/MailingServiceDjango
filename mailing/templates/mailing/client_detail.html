@@ -49,6 +49,7 @@
                         <a href="{% url 'mailing:client_list' %}" class="btn btn-outline-secondary">
                             <i class="fas fa-arrow-left me-2"></i>Назад к списку
                         </a>
+                        {% if object.user == user %}
                         <div>
                             <a href="{% url 'mailing:client_update' client.pk %}" class="btn btn-primary me-2">
                                 <i class="fas fa-edit me-2"></i>Редактировать
@@ -57,6 +58,7 @@
                                 <i class="fas fa-trash-alt me-2"></i>Удалить
                             </a>
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

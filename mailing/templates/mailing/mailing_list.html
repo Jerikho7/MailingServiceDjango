@@ -9,7 +9,7 @@
         </h1>
         <p class="text-muted">Управление рассылками сообщений</p>
     </header>
-    {% if user.is_authenticated or user.is_staff or user == mailing.user %}
+    {% if user.is_authenticated or perms.accounts.can_view_all_mailings or user == mailing.user %}
     <!-- Список рассылок -->
     {% if object_list %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
@@ -60,6 +60,11 @@
 
         {% endfor %}
     </div>
+    <div class="text-center mb-5">
+        <a href="{% url 'mailing:mailing_form' %}" class="btn btn-primary">
+            <i class="fas fa-plus-circle me-2"></i>Новая рассылка
+        </a>
+    </div>
     {% else %}
     <!-- Состояние "Нет рассылок" -->
     <div class="d-flex align-items-center justify-content-center" style="min-height: 50vh;">
@@ -74,15 +79,7 @@
     </div>
     {% endif %}
 
-    <!-- Кнопка добавления (если есть рассылки) -->
-    {% if object_list %}
-    <div class="text-center mb-5">
-        <a href="{% url 'mailing:mailing_form' %}" class="btn btn-primary">
-            <i class="fas fa-plus-circle me-2"></i>Новая рассылка
-        </a>
-    </div>
-    {% endif %}
-    {% endif %}
+    {% else %}
     <div class="d-flex align-items-center justify-content-center" style="min-height: 50vh;">
         <div class="text-center p-5 border rounded-3 bg-light" style="max-width: 600px;">
             <i class="fas fa-paper-plane fa-4x text-muted mb-4"></i>
@@ -90,6 +87,7 @@
             <p class="lead mb-4">Для создания своей первой рассылки войдите в аккаунт или зарегистрируйтесь</p>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <style>

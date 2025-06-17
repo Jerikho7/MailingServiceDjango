@@ -66,6 +66,10 @@ class Mailing(models.Model):
         verbose_name = "Рассылка"
         verbose_name_plural = "Рассылки"
         ordering = ["start_mailing"]
+        permissions = [
+            ("can_view_all_mailings", "Может просматривать все рассылки"),
+            ("can_disable_mailings", "Может отключать рассылки"),
+        ]
 
 
 class MailingAttempt(models.Model):

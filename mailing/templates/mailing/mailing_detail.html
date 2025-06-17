@@ -89,20 +89,30 @@
                             <i class="fas fa-arrow-left me-2"></i>Назад к списку
                         </a>
                         <div class="d-flex align-items-center gap-2">
-                            <a href="{% url 'mailing:mailing_update' mailing.pk %}" class="btn btn-primary">
-                                <i class="fas fa-edit me-2"></i>Редактировать
-                            </a>
-
-                            <form method="post" action="{% url 'mailing:mailing_send' mailing.pk %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-warning">
-                                    <i class="fas fa-paper-plane me-1"></i>Отправить
-                                </button>
-                            </form>
-
-                            <a href="{% url 'mailing:mailing_delete' mailing.pk %}" class="btn btn-danger">
-                                <i class="fas fa-trash-alt me-2"></i>Удалить
-                            </a>
+                            {% if perms.mailing.can_disable_mailings %}
+                                <!-- Кнопка остановки для менеджера -->
+                                <form method="post" action="{% url 'mailing:mailing_disable' mailing.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"
+                                            {% if mailing.status != 'running' %}disabled{% endif %}>
+                                        <i class="fas fa-stop-circle me-2"></i>Остановить рассылку
+                                    </button>
+                                </form>
+                            {% else %}
+                                <!-- Кнопки для обычного пользователя -->
+                                <a href="{% url 'mailing:mailing_update' mailing.pk %}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Редактировать
+                                </a>
+                                <form method="post" action="{% url 'mailing:mailing_send' mailing.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-paper-plane me-1"></i>Отправить
+                                    </button>
+                                </form>
+                                <a href="{% url 'mailing:mailing_delete' mailing.pk %}" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt me-2"></i>Удалить
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

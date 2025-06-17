@@ -9,7 +9,7 @@
         </h1>
         <p class="lead text-muted">Управление вашими клиентами</p>
     </header>
-    {% if user.is_authenticated or user.is_staff or user == mailing.user %}
+   {% if user.is_authenticated or user.is_staff or user == mailing.user %}
     <!-- Список клиентов -->
     {% if object_list %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
@@ -47,6 +47,11 @@
         </div>
         {% endfor %}
     </div>
+    <div class="text-center mb-5">
+        <a href="{% url 'mailing:client_create' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-user-plus me-2"></i>Добавить клиента
+        </a>
+    </div>
     {% else %}
     <!-- Состояние "Нет клиентов" -->
     <div class="d-flex align-items-center justify-content-center" style="min-height: 50vh;">
@@ -60,16 +65,7 @@
         </div>
     </div>
     {% endif %}
-
-    <!-- Кнопка добавления (только если есть клиенты) -->
-    {% if object_list %}
-    <div class="text-center mb-5">
-        <a href="{% url 'mailing:client_create' %}" class="btn btn-primary btn-lg">
-            <i class="fas fa-user-plus me-2"></i>Добавить клиента
-        </a>
-    </div>
-    {% endif %}
-    {% endif %}
+    {% else %}
     <div class="d-flex align-items-center justify-content-center" style="min-height: 50vh;">
         <div class="text-center p-5 border rounded-3 bg-light" style="max-width: 600px;">
             <i class="fas fa-paper-plane fa-4x text-muted mb-4"></i>
@@ -77,5 +73,6 @@
             <p class="lead mb-4">Для добавления клиентов войдите в аккаунт или зарегистрируйтесь</p>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

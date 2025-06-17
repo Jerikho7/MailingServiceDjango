@@ -46,6 +46,7 @@ class MailingForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
         if self.instance and self.instance.pk:
@@ -54,6 +55,11 @@ class MailingForm(forms.ModelForm):
                 label="Статус",
                 widget=forms.Select(attrs={'class': 'form-select'})
             )
+
+        if user:
+            self.fields["message"].queryset = Message.objects.filter(user=user)
+            self.fields["clients"].queryset = Client.objects.filter(user=user)
+
     def clean(self):
         cleaned_data = super().clean()
 

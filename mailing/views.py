@@ -1,4 +1,4 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
@@ -15,7 +15,6 @@ from django.views.generic import (
 from mailing.forms import ClientForm, MessageForm, MailingForm
 from mailing.mixins import UserOrManagerViewAccessMixin, UserOnlyEditMixin
 from mailing.models import Mailing, Client, Message, MailingAttempt
-from mailing.services import process_mailing
 
 
 class MailingHomeView(ListView):
@@ -37,17 +36,14 @@ class ClientListView(UserOrManagerViewAccessMixin, ListView):
     template_name = "mailing/client_list.html"
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        if self.request.user.has_perm('mailing.view_client'):
             return Client.objects.all()
         return Client.objects.filter(user=self.request.user)
 
 
-class ClientDetailView(UserOrManagerViewAccessMixin, DetailView):
+class ClientDetailView(DetailView):
     model = Client
     template_name = "mailing/client_detail.html"
-
-    def get_queryset(self):
-        return Client.objects.filter(user=self.request.user)
 
 
 class ClientCreateView(LoginRequiredMixin, CreateView):
@@ -79,7 +75,7 @@ class ClientDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     def test_func(self):
         client = self.get_object()
         user = self.request.user
-        return client.user == user or user.has_perm('mailing.client_delete')
+        return client.user == user
 
     def handle_no_permission(self):
         raise PermissionDenied("У вас нет прав на удаление этого клиента.")
@@ -95,12 +91,9 @@ class MessageListView(UserOrManagerViewAccessMixin, ListView):
         return Message.objects.filter(user=self.request.user)
 
 
-class MessageDetailView(UserOrManagerViewAccessMixin, DetailView):
+class MessageDetailView(DetailView):
     model = Message
     template_name = "mailing/message_detail.html"
-
-    def get_queryset(self):
-        return Message.objects.filter(user=self.request.user)
 
 
 class MessageCreateView(LoginRequiredMixin, CreateView):
@@ -124,7 +117,7 @@ class MessageUpdateView(LoginRequiredMixin, UserOnlyEditMixin, UpdateView):
         return reverse("mailing:message_detail", args=[self.kwargs.get("pk")])
 
 
-class MessageDeleteView(DeleteView):
+class MessageDeleteView(LoginRequiredMixin, DeleteView):
     model = Message
     template_name = "mailing/message_delete.html"
     success_url = reverse_lazy("mailing:message_list")
@@ -132,7 +125,7 @@ class MessageDeleteView(DeleteView):
     def test_func(self):
         message = self.get_object()
         user = self.request.user
-        return message.user == user or user.has_perm('mailing.message_delete')
+        return message.user == user
 
     def handle_no_permission(self):
         raise PermissionDenied("У вас нет прав на удаление этого сообщения.")
@@ -143,16 +136,14 @@ class MailingListView(UserOrManagerViewAccessMixin, ListView):
     template_name = "mailing/mailing_list.html"
 
     def get_queryset(self):
-        if self.request.user.is_staff:
+        if self.request.user.has_perm('mailing.can_view_all_mailings'):
             return Mailing.objects.all()
-        return Mailing.objects.filter(owner=self.request.user)
+        return Mailing.objects.filter(user=self.request.user)
 
-class MailingDetailView(UserOrManagerViewAccessMixin, DetailView):
+class MailingDetailView(DetailView):
     model = Mailing
     template_name = "mailing/mailing_detail.html"
 
-    def get_queryset(self):
-        return Mailing.objects.filter(user=self.request.user)
 
 
 class MailingCreateView(LoginRequiredMixin, CreateView):
@@ -164,6 +155,11 @@ class MailingCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.user = self.request.user
         return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
 
 class MailingUpdateView(LoginRequiredMixin, UserOnlyEditMixin, UpdateView):
@@ -220,22 +216,37 @@ class MailingAttemptView(ListView):
 
 class MailingSendView(View):
     def post(self, request, pk):
-        mailing = get_object_or_404(Mailing, pk=pk, owner=self.request.user)
+        mailing = get_object_or_404(Mailing, pk=pk, user=self.request.user)
         process_mailing(mailing)
         messages.success(request, "Рассылка отправлена.")
         return redirect('mailing:mailing_detail', pk=pk)
 
 
 
-class ActiveMailingsView(ListView):
+class ActiveMailingsView(UserOrManagerViewAccessMixin, ListView):
     model = Mailing
     template_name = "mailing/active_mailing.html"
     context_object_name = "active_mailings"
 
     def get_queryset(self):
-        queryset = Mailing.objects.filter(status="running", owner=self.request.user).prefetch_related("clients", "message")
+        queryset = Mailing.objects.filter(status="running", user=self.request.user).prefetch_related("clients", "message")
         for mailing in queryset:
             total = mailing.clients.count()
             sent = MailingAttempt.objects.filter(mailing=mailing, status="success").count()
             mailing.progress = round((sent / total) * 100) if total > 0 else 0
         return queryset
+
+    def get_queryset(self):
+        if self.request.user.has_perm('mailing.can_view_all_active_mailings'):
+            return Mailing.objects.all()
+        return Mailing.objects.filter(user=self.request.user)
+
+class MailingDisableView(LoginRequiredMixin, PermissionRequiredMixin, View):
+    permission_required = 'mailing.can_disable_mailings'
+
+    def post(self, request, pk):
+        mailing = get_object_or_404(Mailing, pk=pk)
+        mailing.status = 'completed'
+        mailing.save()
+        messages.success(request, "Рассылка остановлена.")
+        return redirect('mailing:mailing_list')
