@@ -1,0 +1,120 @@
+{% extends 'mailing/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">
+        <i class="fas fa-chart-pie me-2 text-primary"></i>Отчет по отправкам рассылок
+    </h2>
+
+    <div class="row mb-4">
+        <!-- Карточка "Всего попыток отправки" -->
+        <div class="col-md-4 mb-3">
+            <div class="card border-info h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-paper-plane me-2 text-info"></i>Всего попыток
+                    </h5>
+                    <p class="card-text fs-4 fw-bold">{{ total_attempts_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка "Успешных попыток" -->
+        <div class="col-md-4 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-check-circle me-2 text-success"></i>Успешных отправок
+                    </h5>
+                    <p class="card-text fs-4 fw-bold">{{ success_attempts_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Карточка "Неудачных попыток" -->
+        <div class="col-md-4 mb-3">
+            <div class="card border-danger h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">
+                        <i class="fas fa-times-circle me-2 text-danger"></i>Неудачных попыток
+                    </h5>
+                    <p class="card-text fs-4 fw-bold">{{ failed_attempts_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Таблица истории отправок -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h4 class="mb-0">
+                <i class="fas fa-history me-2"></i>История попыток отправки
+            </h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="fas fa-hashtag"></i></th>
+                            <th><i class="fas fa-mail-bulk me-1"></i>Рассылка</th>
+                            <th><i class="fas fa-calendar-alt me-1"></i>Дата и время</th>
+                            <th><i class="fas fa-info-circle me-1"></i>Статус</th>
+                            <th><i class="fas fa-server me-1"></i>Ответ сервера</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attempt in attempts %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <i class="fas fa-envelope me-1 text-muted"></i>
+                                    №{{ attempt.mailing.id }}
+                                </td>
+                                <td>
+                                    <i class="far fa-clock me-1 text-muted"></i>
+                                    {{ attempt.attempted_at|date:"d.m.Y H:i" }}
+                                </td>
+                                <td>
+                                    <span class="badge {% if attempt.status == 'success' %}bg-success{% else %}bg-danger{% endif %}">
+                                        <i class="fas {% if attempt.status == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-1"></i>
+                                        {{ attempt.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="font-monospace">
+                                        {{ attempt.server_response|truncatechars:50|default:"-" }}
+                                    </small>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                    Нет записей
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: transform 0.2s;
+    }
+    .card:hover {
+        transform: translateY(-3px);
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    .badge {
+        font-size: 0.85em;
+        padding: 0.5em 0.75em;
+    }
+</style>
+{% endblock %}

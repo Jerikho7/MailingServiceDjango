@@ -1,0 +1,144 @@
+{% extends 'mailing/base.html' %}
+{% load accounts_tags %}
+{% block content %}
+<div class="container mt-5">
+    <!-- Хэдер -->
+    <header class="text-center mb-5">
+        {% if is_own_profile %}
+        <h1 class="display-4">
+            <i class="fas fa-user-circle text-primary"></i> Мой профиль
+        </h1>
+        <p class="lead text-muted">Личная информация и настройки аккаунта</p>
+        {% else %}
+        <h1 class="display-4">
+            <i class="fas fa-user-circle text-primary"></i> Профиль: {{ viewed_user.email }}
+        </h1>
+        <p class="lead text-muted">Информация об аккаунте пользователя</p>
+        {% endif %}
+    </header>
+
+    <!-- Карточка профиля -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-id-card me-2"></i>Персональные данные
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Аватар с иконкой -->
+                    <div class="text-center mb-4">
+                        {% if viewed_user.avatar %}
+                        <img src="{{ viewed_user.avatar | media_filter }"
+                             class="rounded-circle border"
+                             style="width: 150px; height: 150px; object-fit: cover;"
+                             alt="Аватар {{ viewed_user.email }}">
+                        {% else %}
+                        <div class="position-relative d-inline-block">
+                            <i class="fas fa-user-circle text-muted" style="font-size: 150px;"></i>
+                            <span class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2">
+                                <i class="fas fa-camera"></i>
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <!-- Левая колонка -->
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-envelope me-2 text-muted"></i>
+                                    <strong>Email:</strong> {{ viewed_user.email }}
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-phone-alt me-2 text-muted"></i>
+                                    <strong>Телефон:</strong>
+                                    {{ viewed_user.phone_number|default:"Не указан" }}
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Правая колонка -->
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-globe-americas me-2 text-muted"></i>
+                                    <strong>Страна:</strong>
+                                    {{ viewed_user.country|default:"Не указана" }}
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-calendar-check me-2 text-muted"></i>
+                                    <strong>Дата регистрации:</strong>
+                                    {{ viewed_user.date_joined|date:"d.m.Y" }}
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-user-shield me-2 text-muted"></i>
+                                    <strong>Статус:</strong>
+                                    <span class="badge {% if viewed_user.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                        <i class="fas {% if viewed_user.is_active %}fa-check-circle{% else %}fa-times-circle{% endif %} me-1"></i>
+                                        {% if viewed_user.is_active %}Активен{% else %}Заблокирован{% endif %}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Футер с кнопками -->
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% if is_own_profile %}{% url 'mailing:main' %}{% else %}{% url 'accounts:user_list' %}{% endif %}"
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Назад
+                        </a>
+
+                        <div>
+                            {% if is_own_profile %}
+                                <a href="{% url 'accounts:user_edit' viewed_user.pk %}" class="btn btn-primary me-2">
+                                    <i class="fas fa-user-edit me-2"></i>Редактировать
+                                </a>
+                                <a href="{% url 'accounts:password-reset' %}" class="btn btn-warning">
+                                    <i class="fas fa-key me-2"></i>Сменить пароль
+                                </a>
+                            {% elif perms.accounts.can_block_users %}
+                                <form method="post" action="{% url 'accounts:user_block' viewed_user.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger" {% if not viewed_user.is_active %}disabled{% endif %}>
+                                        <i class="fas fa-user-lock me-2"></i>
+                                        {% if viewed_user.is_active %}Заблокировать{% else %}Заблокирован{% endif %}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+    }
+    .list-group-item i {
+        min-width: 24px;
+        text-align: center;
+    }
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.85em;
+        padding: 0.5em 0.75em;
+    }
+    .card-footer .btn {
+        min-width: 120px;
+    }
+</style>
+{% endblock %}

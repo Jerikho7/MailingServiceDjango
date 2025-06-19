@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "widget_tweaks",
     "mailing",
     "accounts",
 ]
@@ -112,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "Europe/Moscow"
 
@@ -135,11 +136,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# AUTH_USER_MODEL = "users.User"
-#
-# LOGIN_REDIRECT_URL = "catalog:product_list"
-# LOGOUT_REDIRECT_URL = "catalog:product_list"
-# LOGIN_URL = "users:login"
+AUTH_USER_MODEL = "accounts.User"
+PHONENUMBER_DEFAULT_REGION = "RU"
+
+LOGIN_REDIRECT_URL = "mailing:main"
+LOGOUT_REDIRECT_URL = "mailing:main"
+LOGIN_URL = "accounts:login"
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.yandex.ru"

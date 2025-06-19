@@ -1,0 +1,75 @@
+{% extends 'mailing/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Хэдер -->
+    <header class="text-center mb-5">
+        <h1 class="display-4">
+            <i class="fas fa-envelope-open-text text-primary"></i> Сервис рассылок
+        </h1>
+        <p class="lead text-muted">Управление вашими email-рассылками</p>
+    </header>
+
+    <!-- Статистика -->
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+        <!-- Все рассылки -->
+        <div class="col">
+            <div class="card h-100 shadow-sm border-primary">
+                <div class="card-body text-center">
+                    <i class="fas fa-mail-bulk fa-3x text-primary mb-3"></i>
+                    <h2 class="card-title">{{ all_mailings_count }}</h2>
+                    <p class="card-text">Всего рассылок</p>
+                </div>
+                <div class="card-footer bg-transparent border-primary">
+                    <a href="{% url 'mailing:mailing_list' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-list me-2"></i>Просмотреть все
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Активные рассылки -->
+        <div class="col">
+            <div class="card h-100 shadow-sm border-success">
+                <div class="card-body text-center">
+                    <i class="fas fa-paper-plane fa-3x text-success mb-3"></i>
+                    <h2 class="card-title">{{ active_mailings_count }}</h2>
+                    <p class="card-text">Активных рассылок</p>
+                </div>
+                <div class="card-footer bg-transparent border-success">
+                    <a href="{% url 'mailing:active_mailing' %}" class="btn btn-outline-success w-100">
+                        <i class="fas fa-bolt me-2"></i>Управление
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Уникальные клиенты -->
+        <div class="col">
+            <div class="card h-100 shadow-sm border-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-info mb-3"></i>
+                    <h2 class="card-title">{{ unique_recipients_count }}</h2>
+                    <p class="card-text">Уникальных получателей</p>
+                </div>
+                <div class="card-footer bg-transparent border-info">
+                    <a href="{% url 'mailing:client_list' %}" class="btn btn-outline-info w-100">
+                        <i class="fas fa-address-book me-2"></i>Список клиентов
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% if user.is_authenticated or user.is_staff or user == mailing.user %}
+    <!-- Быстрые действия -->
+    <div class="text-center mb-5">
+        <a href="{% url 'mailing:mailing_form' %}" class="btn btn-primary btn-lg me-3">
+            <i class="fas fa-plus-circle me-2"></i>Создать рассылку
+        </a>
+        <a href="{% url 'mailing:client_create' %}" class="btn btn-outline-secondary btn-lg">
+            <i class="fas fa-user-plus me-2"></i>Добавить клиента
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

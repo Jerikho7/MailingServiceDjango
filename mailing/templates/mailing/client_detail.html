@@ -1,0 +1,82 @@
+{% extends 'mailing/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Хэдер -->
+    <header class="text-center mb-5">
+        <h1 class="display-4">
+            <i class="fas fa-user text-primary"></i> {{ client.full_name }}
+        </h1>
+        <p class="lead text-muted">Детальная информация о клиенте</p>
+    </header>
+
+    <!-- Карточка с детальной информацией о клиенте -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-id-card me-2"></i>Профиль клиента
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-user-tag me-2 text-muted"></i>
+                                    <strong>ФИО:</strong> {{ client.full_name }}
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-envelope me-2 text-muted"></i>
+                                    <strong>Email:</strong> {{ client.email }}
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-comment me-2 text-muted"></i>
+                                    <strong>Комментарий:</strong>
+                                    <p class="mt-2">{{ client.comment|default:"Нет комментария" }}</p>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'mailing:client_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Назад к списку
+                        </a>
+                        {% if object.user == user %}
+                        <div>
+                            <a href="{% url 'mailing:client_update' client.pk %}" class="btn btn-primary me-2">
+                                <i class="fas fa-edit me-2"></i>Редактировать
+                            </a>
+                            <a href="{% url 'mailing:client_delete' client.pk %}" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-2"></i>Удалить
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+        padding: 1.25rem 1.5rem;
+    }
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}

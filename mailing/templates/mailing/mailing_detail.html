@@ -1,0 +1,141 @@
+{% extends 'mailing/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Хэдер -->
+    <header class="text-center mb-5">
+        <h1 class="display-4">
+            <i class="fas fa-paper-plane text-primary"></i> Рассылка #{{ mailing.id }}
+        </h1>
+        <p class="lead text-muted">Детальная информация о рассылке</p>
+    </header>
+
+    <!-- Карточка с детальной информацией о рассылке -->
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow">
+                <div class="card-header bg-light">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Детали рассылки
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Основная информация -->
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-calendar-alt text-muted me-2"></i>
+                                    <strong>Дата начала:</strong>
+                                    {{ mailing.start_mailing|date:"d.m.Y H:i" }}
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-calendar-times me-2 text-muted"></i>
+                                    <strong>Дата окончания:</strong>
+                                    {{ mailing.end_mailing|date:"d.m.Y H:i" }}
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-envelope me-2 text-muted"></i>
+                                    <strong>Сообщение:</strong>
+                                    {{ mailing.message.subject }}
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Статус и получатели -->
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-tasks me-2 text-muted"></i>
+                                    <strong>Статус:</strong>
+                                    <span class="badge
+                                        {% if mailing.status == 'created' %}bg-secondary
+                                        {% elif mailing.status == 'running' %}bg-primary
+                                        {% else %}bg-success{% endif %}">
+                                        {{ mailing.get_status_display }}
+                                    </span>
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-users me-2 text-muted"></i>
+                                    <strong>Получатели ({{ mailing.clients.count }}):</strong>
+                                    <ul class="mt-2 mb-0">
+                                        {% for client in mailing.clients.all %}
+                                            <li>{{ client.full_name }} &lt;{{ client.email }}&gt;</li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Текст сообщения -->
+                    <div class="mt-4">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <i class="fas fa-envelope-open-text me-2"></i>
+                                <strong>Текст сообщения</strong>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">{{ mailing.message.text }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Футер с кнопками -->
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'mailing:mailing_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Назад к списку
+                        </a>
+                        <div class="d-flex align-items-center gap-2">
+                            {% if perms.mailing.can_disable_mailings %}
+                                <!-- Кнопка остановки для менеджера -->
+                                <form method="post" action="{% url 'mailing:mailing_disable' mailing.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"
+                                            {% if mailing.status != 'running' %}disabled{% endif %}>
+                                        <i class="fas fa-stop-circle me-2"></i>Остановить рассылку
+                                    </button>
+                                </form>
+                            {% else %}
+                                <!-- Кнопки для обычного пользователя -->
+                                <a href="{% url 'mailing:mailing_update' mailing.pk %}" class="btn btn-primary">
+                                    <i class="fas fa-edit me-2"></i>Редактировать
+                                </a>
+                                <form method="post" action="{% url 'mailing:mailing_send' mailing.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-paper-plane me-1"></i>Отправить
+                                    </button>
+                                </form>
+                                <a href="{% url 'mailing:mailing_delete' mailing.pk %}" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt me-2"></i>Удалить
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+        padding: 1.25rem 1.5rem;
+    }
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+    .badge {
+        font-size: 0.9em;
+        padding: 0.35em 0.65em;
+    }
+</style>
+{% endblock %}
