@@ -25,24 +25,15 @@ class MailingForm(forms.ModelForm):
         model = Mailing
         fields = ["start_mailing", "end_mailing", "message", "clients"]
         widgets = {
-            "start_mailing": forms.DateTimeInput(attrs={
-                "type": "datetime-local",
-                "class": "form-control"
-            }),
-            "end_mailing": forms.DateTimeInput(attrs={
-                "type": "datetime-local",
-                "class": "form-control"
-            }),
+            "start_mailing": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
+            "end_mailing": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
         }
 
     clients = forms.ModelMultipleChoiceField(
         queryset=Client.objects.all(),
-        widget=forms.SelectMultiple(attrs={
-            'class': 'form-control',
-            'placeholder': 'Выберите клиентов'
-        }),
+        widget=forms.SelectMultiple(attrs={"class": "form-control", "placeholder": "Выберите клиентов"}),
         label="Получатели",
-        required=True
+        required=True,
     )
 
     def __init__(self, *args, **kwargs):
@@ -50,10 +41,8 @@ class MailingForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.instance and self.instance.pk:
-            self.fields['status'] = forms.ChoiceField(
-                choices=Mailing.STATUS_CHOICES,
-                label="Статус",
-                widget=forms.Select(attrs={'class': 'form-select'})
+            self.fields["status"] = forms.ChoiceField(
+                choices=Mailing.STATUS_CHOICES, label="Статус", widget=forms.Select(attrs={"class": "form-select"})
             )
 
         if user:
@@ -63,10 +52,10 @@ class MailingForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
 
-        start = cleaned_data.get('start_mailing')
-        end = cleaned_data.get('end_mailing')
+        start = cleaned_data.get("start_mailing")
+        end = cleaned_data.get("end_mailing")
 
         if start and end and start >= end:
-            self.add_error('end_mailing', "Дата окончания должна быть позже даты начала")
+            self.add_error("end_mailing", "Дата окончания должна быть позже даты начала")
 
         return cleaned_data

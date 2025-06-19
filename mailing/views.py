@@ -9,12 +9,13 @@ from django.views.generic import (
     DeleteView,
     DetailView,
     ListView,
-    UpdateView, TemplateView,
+    UpdateView,
 )
 
 from mailing.forms import ClientForm, MessageForm, MailingForm
 from mailing.mixins import UserOrManagerViewAccessMixin, UserOnlyEditMixin
 from mailing.models import Mailing, Client, Message, MailingAttempt
+from mailing.services import process_mailing
 
 
 class MailingHomeView(ListView):
@@ -26,7 +27,9 @@ class MailingHomeView(ListView):
 
         context = super().get_context_data(**kwargs)
         context["all_mailings_count"] = Mailing.objects.count()
-        context["active_mailings_count"] = Mailing.objects.filter(status="running",).count()
+        context["active_mailings_count"] = Mailing.objects.filter(
+            status="running",
+        ).count()
         context["unique_recipients_count"] = Client.objects.distinct("email").count()
         return context
 
@@ -36,7 +39,7 @@ class ClientListView(UserOrManagerViewAccessMixin, ListView):
     template_name = "mailing/client_list.html"
 
     def get_queryset(self):
-        if self.request.user.has_perm('mailing.view_client'):
+        if self.request.user.has_perm("mailing.view_client"):
             return Client.objects.all()
         return Client.objects.filter(user=self.request.user)
 
@@ -136,14 +139,14 @@ class MailingListView(UserOrManagerViewAccessMixin, ListView):
     template_name = "mailing/mailing_list.html"
 
     def get_queryset(self):
-        if self.request.user.has_perm('mailing.can_view_all_mailings'):
+        if self.request.user.has_perm("mailing.can_view_all_mailings"):
             return Mailing.objects.all()
         return Mailing.objects.filter(user=self.request.user)
+
 
 class MailingDetailView(DetailView):
     model = Mailing
     template_name = "mailing/mailing_detail.html"
-
 
 
 class MailingCreateView(LoginRequiredMixin, CreateView):
@@ -170,10 +173,10 @@ class MailingUpdateView(LoginRequiredMixin, UserOnlyEditMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        status = form.cleaned_data.get('status')
+        status = form.cleaned_data.get("status")
         if status:
             self.object.status = status
-            self.object.save(update_fields=['status'])
+            self.object.save(update_fields=["status"])
         return response
 
     def get_success_url(self):
@@ -188,7 +191,7 @@ class MailingDeleteView(LoginRequiredMixin, DeleteView):
     def test_func(self):
         mailing = self.get_object()
         user = self.request.user
-        return mailing.user == user or user.has_perm('mailing.mailing_delete')
+        return mailing.user == user or user.has_perm("mailing.mailing_delete")
 
     def handle_no_permission(self):
         raise PermissionDenied("У вас нет прав на удаление этой рассылки.")
@@ -208,9 +211,7 @@ class MailingAttemptView(ListView):
         queryset = self.get_queryset()
         context["total_attempts_count"] = queryset.count()
         context["success_attempts_count"] = queryset.filter(status="success").count()
-        context["failed_attempts_count"] = queryset.filter(
-            status="fail"
-        ).count()
+        context["failed_attempts_count"] = queryset.filter(status="fail").count()
         return context
 
 
@@ -219,8 +220,7 @@ class MailingSendView(View):
         mailing = get_object_or_404(Mailing, pk=pk, user=self.request.user)
         process_mailing(mailing)
         messages.success(request, "Рассылка отправлена.")
-        return redirect('mailing:mailing_detail', pk=pk)
-
+        return redirect("mailing:report")
 
 
 class ActiveMailingsView(UserOrManagerViewAccessMixin, ListView):
@@ -229,24 +229,27 @@ class ActiveMailingsView(UserOrManagerViewAccessMixin, ListView):
     context_object_name = "active_mailings"
 
     def get_queryset(self):
-        queryset = Mailing.objects.filter(status="running", user=self.request.user).prefetch_related("clients", "message")
+        if self.request.user.has_perm("mailing.can_view_all_active_mailings"):
+            queryset = Mailing.objects.all()
+        else:
+            queryset = Mailing.objects.filter(user=self.request.user)
+
+        queryset = queryset.filter(status="running").prefetch_related("clients", "message")
+
         for mailing in queryset:
             total = mailing.clients.count()
             sent = MailingAttempt.objects.filter(mailing=mailing, status="success").count()
             mailing.progress = round((sent / total) * 100) if total > 0 else 0
+
         return queryset
 
-    def get_queryset(self):
-        if self.request.user.has_perm('mailing.can_view_all_active_mailings'):
-            return Mailing.objects.all()
-        return Mailing.objects.filter(user=self.request.user)
 
 class MailingDisableView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    permission_required = 'mailing.can_disable_mailings'
+    permission_required = "mailing.can_disable_mailings"
 
     def post(self, request, pk):
         mailing = get_object_or_404(Mailing, pk=pk)
-        mailing.status = 'completed'
+        mailing.status = "completed"
         mailing.save()
         messages.success(request, "Рассылка остановлена.")
-        return redirect('mailing:mailing_list')
+        return redirect("mailing:mailing_list")

@@ -7,7 +7,9 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True, verbose_name="Email", help_text="Введите email")
 
-    avatar = models.ImageField(upload_to="accounts/avatars/", blank=True, null=True, verbose_name="Аватар", help_text="Загрузите изображение")
+    avatar = models.ImageField(
+        upload_to="accounts/avatars/", blank=True, null=True, verbose_name="Аватар", help_text="Загрузите изображение"
+    )
     phone_number = PhoneNumberField(blank=True, verbose_name="Телефон", help_text="Введите номер телефона")
     country = models.CharField(max_length=50, blank=True, null=True, verbose_name="Страна", help_text="Введите страну")
 
@@ -27,4 +29,3 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
-

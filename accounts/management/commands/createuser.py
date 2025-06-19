@@ -10,9 +10,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("Суперпользователь уже существует."))
             return
 
-        user = User.objects.create(email='admin@mail.ru')
+        user = User.objects.create(email="admin@mail.ru")
 
-        user.set_password('123qwert')
+        user.set_password("123qwert")
 
         user.is_active = True
         user.is_staff = True

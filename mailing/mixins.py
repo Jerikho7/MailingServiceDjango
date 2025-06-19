@@ -1,5 +1,6 @@
 from django.core.exceptions import PermissionDenied
 
+
 class UserOrManagerViewAccessMixin:
     user_field = "user"
 
@@ -10,6 +11,7 @@ class UserOrManagerViewAccessMixin:
         if user == self.request.user or self.request.user.is_staff:
             return obj
         raise PermissionDenied("У вас нет доступа к просмотру этого объекта.")
+
 
 class UserOnlyEditMixin:
     user_field = "user"
